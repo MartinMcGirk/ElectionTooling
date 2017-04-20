@@ -25,30 +25,33 @@ def map_uk_result_to_election_result(result_object, props):
 
 class ResultsViewer:
     """Class to query the election results that we've accumulated."""
-    _results = []
-
     def __init__(self):
         self.load_results()
 
     def load_results(self):
+        self._results = []
         with open('Data/2015Results.csv') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 result = map_uk_result_to_election_result(ElectionResult(), row)
                 self._results.append(result)
 
-    def by_constituency(self, constituency):
-        return [r for r in self._results if r.constituency_name == constituency]
+    def query(self, seq, f):
+        """Filters a sequence seq based on the result of function f"""
+        return [r for r in seq if f(r)]
 
-    def by_country(self, country):
-        return [r for r in self._results if r.country == country]
+    def by_constituency(self, seq, constituency):
+        return self.query(seq, lambda x: x.constituency_name == constituency)
 
-    def get_winner(self, results):
-        return max(results, key=attrgetter('votes'))
+    def by_country(self, seq, country):
+        return self.query(seq, lambda x: x.country == country)
+
+    def get_max(self, seq, attr):
+        return max(seq, key=attrgetter(attr))
 
     def get_winner_for(self, constituency):
-        self.get_winner(self.by_constituency(constituency)).printResult()
+        self.get_max(self.by_constituency(constituency), "votes").printResult()
 
     def get_results_for(self, constituency):
-        for r in self.by_constituency(constituency):
+        for r in self.query(self._results, lambda x: x.constituency_name == constituency):
             r.printResult()
